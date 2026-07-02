@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useInvalidate, useProfile } from '@/lib/hooks';
@@ -33,15 +33,17 @@ export default function PerfilPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    if (!profile) return;
+  // Preenche o formulário quando o perfil chega (ajuste de estado durante o render)
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  if (profile && loadedFor !== profile.id) {
+    setLoadedFor(profile.id);
     setHeightCm(String(profile.height_cm ?? ''));
     setActivity(profile.activity_level);
     setGoalType(profile.goal_type);
     setRate(String(profile.goal_rate_kg_week));
     setWaterTarget(String(profile.water_target_ml));
     setEquipment(profile.equipment ?? []);
-  }, [profile]);
+  }
 
   if (isLoading || !profile) return <Spinner />;
 

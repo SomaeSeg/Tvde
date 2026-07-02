@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { useInvalidate } from '@/lib/hooks';
 import { Button, Card, Input, PageHeader, Spinner } from '@/components/ui';
@@ -44,9 +45,6 @@ function AdicionarInner() {
 
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [localResults, setLocalResults] = useState<Candidate[]>([]);
-  const [offResults, setOffResults] = useState<Candidate[]>([]);
-  const [searching, setSearching] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [selected, setSelected] = useState<Candidate | null>(null);
@@ -60,39 +58,25 @@ function AdicionarInner() {
     return () => clearTimeout(t);
   }, [query]);
 
-  useEffect(() => {
-    if (debounced.trim().length < 2) {
-      setLocalResults([]);
-      setOffResults([]);
-      return;
-    }
-    let cancelled = false;
-    setSearching(true);
-
-    const supabase = createClient();
-    Promise.all([
-      supabase.from('foods').select('*').ilike('name', `%${debounced}%`).limit(12),
-      fetch(`/api/off/search?q=${encodeURIComponent(debounced)}`).then((r) => r.json()),
-    ])
-      .then(([localRes, offRes]) => {
-        if (cancelled) return;
-        const local = ((localRes.data ?? []) as Food[]).map(foodToCandidate);
-        setLocalResults(local);
-        const localBarcodes = new Set(local.map((f) => f.barcode).filter(Boolean));
-        setOffResults(
-          ((offRes.products ?? []) as OffFood[])
-            .filter((p) => !p.barcode || !localBarcodes.has(p.barcode))
-            .map(offToCandidate),
-        );
-      })
-      .finally(() => {
-        if (!cancelled) setSearching(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [debounced]);
+  const { data: results, isFetching: searching } = useQuery({
+    queryKey: ['food_search', debounced],
+    enabled: debounced.trim().length >= 2,
+    queryFn: async () => {
+      const supabase = createClient();
+      const [localRes, offRes] = await Promise.all([
+        supabase.from('foods').select('*').ilike('name', `%${debounced}%`).limit(12),
+        fetch(`/api/off/search?q=${encodeURIComponent(debounced)}`).then((r) => r.json()),
+      ]);
+      const local = ((localRes.data ?? []) as Food[]).map(foodToCandidate);
+      const localBarcodes = new Set(local.map((f) => f.barcode).filter(Boolean));
+      const off = ((offRes.products ?? []) as OffFood[])
+        .filter((p) => !p.barcode || !localBarcodes.has(p.barcode))
+        .map(offToCandidate);
+      return { local, off };
+    },
+  });
+  const localResults = debounced.trim().length >= 2 ? (results?.local ?? []) : [];
+  const offResults = debounced.trim().length >= 2 ? (results?.off ?? []) : [];
 
   async function onBarcode(code: string) {
     setScanning(false);

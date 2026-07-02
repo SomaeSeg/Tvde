@@ -29,14 +29,13 @@ export function BarcodeScanner({
   onClose: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [supported, setSupported] = useState<boolean | null>(null);
+  // Renderizado apenas no cliente (aberto por interação), por isso window existe.
+  const [supported] = useState(() => typeof window !== 'undefined' && !!window.BarcodeDetector);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState('');
 
   useEffect(() => {
-    const hasDetector = typeof window !== 'undefined' && !!window.BarcodeDetector;
-    setSupported(hasDetector);
-    if (!hasDetector) return;
+    if (!supported) return;
 
     let stream: MediaStream | null = null;
     let raf = 0;
@@ -81,7 +80,7 @@ export function BarcodeScanner({
       cancelAnimationFrame(raf);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [onDetected]);
+  }, [onDetected, supported]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 p-4">
