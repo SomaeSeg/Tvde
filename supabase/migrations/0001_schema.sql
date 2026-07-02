@@ -246,7 +246,8 @@ create table public.nutrition_targets (
   protein_g integer not null,
   carbs_g integer not null,
   fat_g integer not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  unique (user_id, effective_from)
 );
 
 create index nutrition_targets_user_idx on public.nutrition_targets (user_id, effective_from desc);
