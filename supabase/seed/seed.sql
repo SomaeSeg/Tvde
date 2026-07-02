@@ -269,4 +269,4 @@ insert into public.foods (name, brand, source, kcal_100, protein_100, carbs_100,
 ('Cerveja', null, 'base', 43, 0.5, 3.6, 0.0, 0.0, 0.0, 0.0, 330),
 ('Chocolate preto 70%', null, 'base', 598, 7.8, 45.9, 42.6, 10.9, 24.0, 0.0, 20),
 ('Bolacha maria', null, 'base', 435, 7.5, 75.0, 11.0, 2.5, 22.0, 0.6, 30)
-on conflict do nothing;
+on conflict (name) where source = 'base' do nothing;

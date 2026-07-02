@@ -138,6 +138,8 @@ create table public.foods (
 
 create index foods_barcode_idx on public.foods (barcode);
 create index foods_name_idx on public.foods using gin (to_tsvector('simple', name));
+-- Alimentos base (seed) não podem duplicar em re-seeds
+create unique index foods_base_name_unique on public.foods (name) where source = 'base';
 
 alter table public.foods enable row level security;
 create policy "foods: read global or own" on public.foods
@@ -336,7 +338,8 @@ create table public.plan_exercises (
   reps text, -- "8-12", "30s", etc.
   rest_seconds integer default 90,
   duration_minutes integer, -- para cardio
-  notes text
+  notes text,
+  unique (plan_day_id, position)
 );
 
 alter table public.plan_exercises enable row level security;
