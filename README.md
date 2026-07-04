@@ -2,6 +2,8 @@
 
 A tua central de saúde: **biometria detalhada, treino em casa e nutrição** num só lugar. PWA instalável no telemóvel, construída com Next.js + Supabase.
 
+**App live:** https://tvde.vercel.app
+
 ## Funcionalidades (V1)
 
 ### 📏 Corpo
